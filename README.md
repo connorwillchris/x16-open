@@ -64,6 +64,32 @@ arg1-arg8 are reserved for kernel calls and must not be used for
 other purposes.
 
 
+### Error Handling
+
+All kernel functions sets the carry flag if an error occured.
+
+The error code is returned in the A register. A plain text error
+message is also available, and can be retrieved through the get_errmsg
+function.
+
+List of error kernal error codes:
+
+|Code  |Name                |Description                             |
+|------|--------------------|----------------------------------------|
+|0     |EOK                 |No error                                |
+|1     |ENOMEM              |No free banked RAM                      |
+|2     |EMEMINUSE           |Requsted RAM bank already in use        |
+|3     |ENODEVSPC           |No space for more devices               |
+|4     |ENODEV              |Device does not exist                   |
+|5     |EDEVBUSY            |Device is used and can't be altered     |
+|6     |EDEVINVAL           |Invalid operation for the device        |
+|8     |ENOFILESPC          |No space for more files                 |
+|7     |ENOTFOUND           |File not found                          |
+|8     |ENOTFILE            |Path is not a file                      |
+|9     |ENOTDIR             |Path is not a directory                 |
+|10    |EIO                 |Generic driver failure                  |
+
+
 ### Function: reset
 
 **Call address:** $c000<br>
@@ -80,7 +106,7 @@ may also be called while using the computer.
 **Call address:** $c003<br>
 **Input:** A: Requested RAM bank index<br>
 **Output:** A: Allocated RAM bank index
-**Error:** C: Set on error, A: Error code 1, get_errmsg returns error message
+**Errors:** A: ENOMEM, EMENINUSE
 
 The X16 has no hardware support for memory management.  The kernel's memory management functions 
 (alloc and free) keep track of which parts of banked RAM are free to use. All well behaved
@@ -88,9 +114,10 @@ programs are expected to use these functions. These functions are needed especia
 the kernel allows for device drivers loaded into RAM.
 
 If this function is called with A = 0, it will search for and allocate the next available
-RAM bank.
+RAM bank. Error ENOMEM is raised if there is no free memory.
 
 If it is called with A > 0, the function will attempt to allocate the specified RAM bank.
+Error EMEMINUSE is raised if that bank is already in use.
 
 The allocated RAM bank is returned in the A register.
 
